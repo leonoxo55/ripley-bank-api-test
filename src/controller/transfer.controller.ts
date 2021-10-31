@@ -1,5 +1,8 @@
 import { Request, Response } from 'express';
 import Transfer, { ITransfer } from '../models/Transfer';
+import mailSender from '../utils/mails';
+import User from '../models/User';
+import Recipient from '../models/Recipient';
 
 export const transfer = async (req: Request, res: Response) => {
     const {
@@ -23,7 +26,11 @@ export const transfer = async (req: Request, res: Response) => {
     });
 
     try {
-        await tranfer.save();
+        await tranfer.save().then( async tr => {
+            const user = await User.findById(userId);
+            const recipient = await Recipient.findById(recipientId);
+            mailSender(user, tr, recipient).catch(error => console.error(error));
+        });
         res.send({ error: null, data: tranfer });
     } catch(error: any) {
         console.error(error.message);
